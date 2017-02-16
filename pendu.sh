@@ -2,32 +2,38 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-HANGCOUNT=0
-ATEMPT=7
 hang(){
-	((HANGCOUNT+=1))
-	echo "WRONG !!! $HANGCOUNT/$ATEMPT left"
+	((FAILCOUNT+=1))
+	echo "WRONG !!! $ATEMPTLEFT atempt left"
+	ATEMPTLEFT=$(($MAXAPTEMPT-$FAILCOUNT))
 }
 
-ABC=$(echo {a..z})
+# Parameters
+MINWORDSIZE=4
+MAXAPTEMPT=7
 
+# Cloose the word
 while : ; do
 	WORD=$(compgen -ab | shuf -n 1̀)
-	[ ${#WORD} -lt 5 ] || break
+	[ ${#WORD} -lt "$MINWORDSIZE" ] || break
 done
 
-# For cheater only
-# echo "word=$WORD"
+# Init
+FAILCOUNT=0
+ATEMPTLEFT=$MAXAPTEMPT
+ABC=$(echo {a..z})
 WORDLEFT="${WORD}"
 
-until [ "$WORDLEFT" == "" ] || [ "$HANGCOUNT" -gt "$ATEMPT" ]; do
+until [ "$WORDLEFT" == "" ] || [ "$FAILCOUNT" -gt "$MAXAPTEMPT" ]; do
 	echo -n "$WORD" | tr "$WORDLEFT" .
 	echo " ($((${#WORD}-${#WORDLEFT}))/${#WORD})"
 	read L
 	case ${#L} in 
+		0)
+			continue ;;
 		1)
-			case "${WORD}" in
-				*"${L}"* )
+			case "$WORD" in
+				*"$L"* )
 					WORDLEFT="${WORDLEFT//$L}";;
 				*) hang ;;
 			esac ;;
@@ -40,7 +46,7 @@ until [ "$WORDLEFT" == "" ] || [ "$HANGCOUNT" -gt "$ATEMPT" ]; do
 	esac
 done
 
-if [ "$HANGCOUNT" -gt "$ATEMPT" ]; then
+if [ "$FAILCOUNT" -gt "$MAXAPTEMPT" ]; then
 	echo "You Loose ! The word was $WORD"
 else
 	echo "You Win !"
